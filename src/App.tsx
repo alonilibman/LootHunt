@@ -1,4 +1,3 @@
-import React from 'react';
 import LoothuntHome from './Home';
 
 function App() {

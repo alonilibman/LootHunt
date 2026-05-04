@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes kenZoomIn {
+  from { transform: scale(1); }
+  to { transform: scale(1.15); }
+}
+
+@keyframes kenZoomInFast {
+  from { transform: scale(1); }
+  to { transform: scale(1.25); }
+}
+
+@keyframes kenZoomOut {
+  from { transform: scale(1.2); }
+  to { transform: scale(1); }
+}
+
+@keyframes kenPanRight {
+  from { transform: scale(1.1) translateX(-5%); }
+  to { transform: scale(1.1) translateX(5%); }
+}
+
+@keyframes kenPanLeft {
+  from { transform: scale(1.1) translateX(5%); }
+  to { transform: scale(1.1) translateX(-5%); }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.animate-ken-zoom-in { animation: kenZoomIn 7s linear forwards; }
+.animate-ken-zoom-in-fast { animation: kenZoomInFast 5s linear forwards; }
+.animate-ken-zoom-in-slow { animation: kenZoomIn 10s linear forwards; }
+.animate-ken-zoom-out { animation: kenZoomOut 7s linear forwards; }
+.animate-ken-pan-right { animation: kenPanRight 7s linear forwards; }
+.animate-ken-pan-left { animation: kenPanLeft 7s linear forwards; }
+.animate-pulse-slow { animation: pulseSlow 4s infinite ease-in-out; }

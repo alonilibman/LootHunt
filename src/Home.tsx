@@ -1,86 +1,82 @@
-import React, { useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
+import { useEffect, useRef, useState } from 'react';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { auth, googleProvider, signInWithPopup, signOut } from './firebase';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import CinematicIntro from './CinematicIntro';
 
-export default function LoothuntHome() {
-  // Tell TypeScript this ref belongs to a div
+export default function Home() {
   const mapRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isPlayingIntro, setIsPlayingIntro] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const initMap = async () => {
-      const loader = new Loader({
-        // Force TypeScript to accept this as a string
-        apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string, 
-        version: "weekly",
-      });
-
-      // Swapped back to .load() to satisfy your current TypeScript definitions
-      await (loader as any).load();
-
-      if (mapRef.current) {
-        // Cast window to 'any' to bypass strict google.maps typing
-        new (window as any).google.maps.Map(mapRef.current, {
-          center: { lat: 0, lng: 0 }, 
-          zoom: 2,
-          disableDefaultUI: true, 
-          mapTypeId: 'satellite'
+      try {
+        setOptions({
+          key: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string, 
         });
+        await importLibrary("maps");
+        if (mapRef.current && (window as any).google) {
+          new (window as any).google.maps.Map(mapRef.current, {
+            center: { lat: 0, lng: 0 }, 
+            zoom: 2,
+            disableDefaultUI: true, 
+            mapTypeId: 'satellite'
+          });
+        }
+      } catch (error) {
+        console.error("Error loading Google Maps:", error);
       }
     };
-
     initMap();
   }, []);
 
-  const handleNewGame = () => {
-    const confirmStart = window.confirm("Start a new game? This will reset your current progress.");
-    if (confirmStart) {
-      console.log("Starting new game steps...");
+  const handleAuth = async () => {
+    try {
+      if (user) {
+        await signOut(auth);
+      } else {
+        // Firebase will complete the sign-in even if the COOP error triggers
+        await signInWithPopup(auth, googleProvider);
+      }
+    } catch (error: any) {
+      // Check if it's just the annoying popup-closed error
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Authentication Error:", error);
+      }
     }
   };
 
-  const handleAuth = () => {
-    console.log("Triggering Firebase Google/Anonymous Auth...");
-  };
+  if (isPlayingIntro) {
+    return <CinematicIntro onComplete={() => setIsPlayingIntro(false)} />;
+  }
 
   return (
     <div className="relative w-full h-screen font-['Outfit'] overflow-hidden bg-gray-900">
-      
       <div ref={mapRef} className="absolute inset-0 z-0 opacity-50" />
-
-      <div className="relative z-10 flex flex-col items-center justify-center h-full p-6 text-white">
-        
-        <h1 className="text-6xl font-bold mb-12 tracking-wider drop-shadow-lg">
-          LOOTHUNT
-        </h1>
-
+      <div className="relative z-10 flex flex-col items-center justify-center h-full p-6 text-white text-center">
+        <h1 className="text-6xl font-bold mb-12 tracking-wider drop-shadow-lg">LootHunt</h1>
         <div className="flex flex-col gap-4 w-64">
-          <button 
-            onClick={handleAuth}
-            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors duration-200 shadow-md"
-          >
-            Login / Register
+          <button onClick={handleAuth} className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold shadow-md">
+            {user ? `Logout (${user.displayName?.split(' ')[0]})` : 'Login with Google'}
           </button>
-
-          <button 
-            onClick={handleNewGame}
-            className="w-full py-3 px-6 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors duration-200 shadow-md"
-          >
-            New Game
-          </button>
-
-          <button 
-            className="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors duration-200 shadow-md"
-          >
+          <button onClick={() => setIsPlayingIntro(true)}>New Game</button>
+          <button disabled={!user} className={`w-full py-3 px-6 rounded-lg font-semibold shadow-md ${user ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}>
             Continue
           </button>
-
-          <button 
-            disabled
-            className="w-full py-3 px-6 bg-gray-800 text-gray-400 rounded-lg font-semibold cursor-not-allowed border border-gray-700"
-          >
+          <button disabled className="w-full py-3 px-6 bg-gray-800 text-gray-400 rounded-lg cursor-not-allowed border border-gray-700">
             Shop (Empty)
           </button>
         </div>
       </div>
     </div>
   );
+  
 }
