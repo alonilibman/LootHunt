@@ -1,10 +1,11 @@
-import StreetView from './StreetView'; // ודא שהנתיב תואם לאיפה ששמרת את הקובץ
+import React from 'react';
+import LoothuntHome from './Home';
 
 function App() {
   return (
-    <>
-      <StreetView />
-    </>
+    <div className="App">
+      <LoothuntHome />
+    </div>
   );
 }
 
